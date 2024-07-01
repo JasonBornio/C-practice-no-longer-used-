@@ -1,4 +1,4 @@
-#include "../memory/ram.h"
+#include "../ram.h"
 
 int main(){
     Random_Access_Memory ram;
