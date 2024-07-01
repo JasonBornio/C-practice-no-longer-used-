@@ -24,6 +24,7 @@ class Reg_32 {
 
         bool get_data(int index);
         int get_data();
+        void get_data_arr(bool arr[32]);
 
     private:
         char name[10];
@@ -136,4 +137,10 @@ bool Reg_32::get_data(int index){
 
 int Reg_32::get_data(){
     return bin_to_int(data, g_dim);
+}
+
+void Reg_32::get_data_arr(bool arr[32]){
+    for (int i = 0; i < 32; ++i) {
+        arr[i] = data[i];
+    }
 }
