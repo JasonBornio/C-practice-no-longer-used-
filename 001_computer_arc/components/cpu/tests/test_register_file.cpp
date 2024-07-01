@@ -13,12 +13,12 @@ int main(){
     reg.fill_arr_lower(arr, 8);
     reg.get_data_arr(arr_data);
 
-    reg_file.clk_step(1, 2, 1, arr_data);
+    reg_file.clk_step(1, 2, 1, arr_data, true);
 
     reg.fill_arr_lower(arr2, 8);
     reg.get_data_arr(arr_data);
     
-    reg_file.clk_step(1, 2, 3, arr_data);
+    reg_file.clk_step(1, 2, 3, arr_data, true);
 
     reg_file.get_rs(arr_data);
 
