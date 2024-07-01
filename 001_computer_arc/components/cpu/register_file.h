@@ -7,7 +7,7 @@ class Register_File {
         Register_File();
         void get_rs(bool arr[32]);
         void get_rt(bool arr[32]);
-        void clk_step(int _rs, int _rt, int _rd, bool _wb_data[32]);
+        void clk_step(int _rs, int _rt, int _rd, bool _wb_data[32], bool _reg_wrt);
         void print();
 
     private:
@@ -19,6 +19,7 @@ class Register_File {
         int rt;
         int rd;
         bool wb_data[32] = {};
+        bool reg_write;
 
         //outputs
         bool rs_out[32] = {};
@@ -30,9 +31,10 @@ class Register_File {
 };
 
 Register_File::Register_File(){
-    int rs = 0;
-    int rt = 0;
-    int rd = 0;
+    rs = 0;
+    rt = 0;
+    rd = 0;
+    reg_write = false;
 
     registers[0].set_name("$zero");
     registers[1].set_name("$at");
@@ -93,7 +95,7 @@ void Register_File::get_rt(bool arr[32]){
     }
 }
 
-void Register_File::clk_step(int _rs, int _rt, int _rd, bool _wb_data[32]){
+void Register_File::clk_step(int _rs, int _rt, int _rd, bool _wb_data[32], bool _reg_wrt){
 
     //handle inputs
     rs = _rs;
@@ -105,7 +107,8 @@ void Register_File::clk_step(int _rs, int _rt, int _rd, bool _wb_data[32]){
     }
 
     //wrt back
-    set_register(rd, wb_data, 32);
+    if(reg_write)
+        set_register(rd, wb_data, 32);
 
     //handle outputs
     get_register(rs, rs_out);
