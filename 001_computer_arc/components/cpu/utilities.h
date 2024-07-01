@@ -11,7 +11,12 @@ int bin_to_int(bool bin[], int size){
     
     for(int i = 0; i < size; i++){
         if(bin[(size-1) - i])
-            value += pow(2, i);
+            if(i == 31){
+                value -= pow(2, i);
+            }
+            else{
+                value += pow(2, i);
+            }
     } 
 
     return value;
