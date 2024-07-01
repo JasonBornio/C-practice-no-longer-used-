@@ -52,7 +52,7 @@ Reg_32::Reg_32(){
 Reg_32 Reg_32::operator|(const Reg_32& r2){
     Reg_32 reg;
 
-    for(int i = 0; i < g_dim; i++){
+    for(int i = 0; i < constants::g_dim; i++){
         reg.data[i] = this->data[i] || r2.data[i];
     } 
 
@@ -62,7 +62,7 @@ Reg_32 Reg_32::operator|(const Reg_32& r2){
 Reg_32 Reg_32::operator&(const Reg_32& r2){
     Reg_32 reg;
 
-    for(int i = 0; i < g_dim; i++){
+    for(int i = 0; i < constants::g_dim; i++){
         reg.data[i] = this->data[i] && r2.data[i];
     } 
 
@@ -86,15 +86,15 @@ void Reg_32::print(){
 
     std::cout << name <<": { ";
 
-    for (int i = 0; i < g_dim; i++){
+    for (int i = 0; i < constants::g_dim; i++){
         std::cout << int(data[i]);
     }
 
-    std::cout <<", num: "<< get_data() << " }"<< std::endl;
+    std::cout <<", val: "<< get_data() << " }"<< std::endl;
 }
 
 void Reg_32::fill_arr_upper(bool _data[], int size){
-    if (size > g_dim) {size = g_dim;}
+    if (size > constants::g_dim) {size = constants::g_dim;}
 
     for (int i = 0; i < size; i++){
         data[i] = _data[i];
@@ -102,15 +102,15 @@ void Reg_32::fill_arr_upper(bool _data[], int size){
 }
 
 void Reg_32::fill_arr_lower(bool _data[], int size){
-    if (size > g_dim) {size = g_dim;}
+    if (size > constants::g_dim) {size = constants::g_dim;}
 
     for (int i = 0; i < size; i++){
-        data[(g_dim) - size + i] = _data[i];
+        data[(constants::g_dim) - size + i] = _data[i];
     }
 }
 
 void Reg_32::fill_ones_upper(int size){
-    if (size > g_dim) {size = g_dim;}
+    if (size > constants::g_dim) {size = constants::g_dim;}
 
     for (int i = 0; i < size; i++){
         data[i] = true;
@@ -118,15 +118,15 @@ void Reg_32::fill_ones_upper(int size){
 }
 
 void Reg_32::fill_ones_lower(int size){
-    if (size > g_dim) {size = g_dim;}
+    if (size > constants::g_dim) {size = constants::g_dim;}
 
     for (int i = 0; i < size; i++){
-        data[(g_dim) - size + i] = true;
+        data[(constants::g_dim) - size + i] = true;
     }
 }
 
 void Reg_32::clear(){
-    for (int i = 0; i < g_dim; i++){
+    for (int i = 0; i < constants::g_dim; i++){
         data[i] = false;
     }
 }
@@ -136,7 +136,7 @@ bool Reg_32::get_data(int index){
 }
 
 int Reg_32::get_data(){
-    return bin_to_int(data, g_dim);
+    return bin_to_int(data, constants::g_dim);
 }
 
 void Reg_32::get_data_arr(bool arr[32]){
