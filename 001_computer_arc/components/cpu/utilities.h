@@ -2,10 +2,19 @@
 #include <math.h>
 #include <iostream>
 
-int g_dim = 32;
+#ifndef CONSTANTS_H
+#define CONSTANTS_H
+
+// define your own namespace to hold constants
+namespace constants
+{
+    // constants have internal linkage by default
+    constexpr int g_dim { 32 };
+}
+#endif
 
 int bin_to_int(bool bin[], int size){
-    if (size > g_dim) {size = g_dim;}
+    if (size > constants::g_dim) {size = constants::g_dim;}
 
     int value = 0;
     
@@ -23,7 +32,7 @@ int bin_to_int(bool bin[], int size){
 }
 
 void int_to_bin(int num, bool arr[], int size){
-    if (size > g_dim) {size = g_dim;}
+    if (size > constants::g_dim) {size = constants::g_dim;}
 
     for (int i = 0; i < size; ++i) {
         arr[size - 1 - i] = (num >> i) & 1;
@@ -32,7 +41,7 @@ void int_to_bin(int num, bool arr[], int size){
 }
 
 void print_bin(bool bin[], int size){
-    if (size > g_dim) {size = g_dim;}
+    if (size > constants::g_dim) {size = constants::g_dim;}
     
     std::cout <<"binary: ";
 
