@@ -20,16 +20,20 @@ int main(){
 
     bool output_arr[32];
 
-    mux.clock_step(arr, 4, control[3]);
+    mux.clock_step(arr);
+    mux.get_output(control[3], output_arr);
     mux.print();
 
-    mux.clock_step(arr, 4, control[2]);
+    mux.clock_step(arr);
+    mux.get_output(control[2], output_arr);
     mux.print();
 
-    mux.clock_step(arr, 4, control[1]);
+    mux.clock_step(arr);
+    mux.get_output(control[1], output_arr);
     mux.print();
 
-    mux.clock_step(arr, 4, control[0]);
+    mux.clock_step(arr);
+    mux.get_output(control[0], output_arr);
     mux.print();
 
 
