@@ -10,6 +10,7 @@ class Random_Access_Memory {
         void data_clk_step(bool _address[32], bool write_data[32], bool _mem_wrt, bool _mem_read);
         void inst_clk_step(bool _address[32]);
         void get_data_out(bool arr[32]);
+        void load_instructions(bool arr[][32], int length);
 
         void print();
         void print_data();
@@ -21,7 +22,7 @@ class Random_Access_Memory {
         bool memory[1024][8] = {};
 
         int reserved_pointer = 0;
-        int text_pointers[2] = { 64, 508 };  //448 wide (112 words)
+        int text_pointers[3] = { 64, 508, 64 };  //448 wide (112 words)
         int static_data_pointers[2] = { 512, 767 }; //256 wide (64 words)
         int dynamic_data_pointers[2] = { 768, 768 };
         int stack_pointer = 1024;
@@ -111,6 +112,20 @@ void Random_Access_Memory::get_data_out(bool arr[32]){
     }
 }
 
+void Random_Access_Memory::load_instructions(bool arr[][32], int length){
+
+    for (int i = 0; i < length; i++){
+        if(text_pointers[2] > text_pointers[1]){
+            break;
+        }
+        write_word((i * 4) + text_pointers[2], arr[i]);
+    }
+    
+    text_pointers[2] += length * 4;
+    
+    if(text_pointers[2] > text_pointers[1]) text_pointers[2] = text_pointers[1] + 4;
+
+}
 void Random_Access_Memory::print(int lower_bound, int upper_bound){
     for(int i = lower_bound; i < upper_bound; i++){
 
