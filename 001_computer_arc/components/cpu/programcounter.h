@@ -39,7 +39,7 @@ void Program_Counter::increment(){
 
 void Program_Counter::branch(bool offset[32]){
 
-    pc = adder.add_int(pc, 4 + (bin_to_int(offset, 32) * 4));
+    pc = adder.add_int(pc, (bin_to_int(offset, 32) * 4));
 
     if(pc.get_data() > text_pointers[1]){
         bool arr[32];
