@@ -101,18 +101,19 @@ void Register_File::clk_step(int _rs, int _rt, int _rd, bool _wb_data[32], bool 
     rs = _rs;
     rt = _rt;
     rd = _rd;
-
-    for (int i = 0; i < 32; ++i) {
-        wb_data[i] = _wb_data[i];
-    }
-
+    
     //wrt back
-    if(reg_write)
+    if(reg_write){
+        for (int i = 0; i < 32; ++i) {
+            wb_data[i] = _wb_data[i];
+        }
         set_register(rd, wb_data, 32);
-
-    //handle outputs
-    get_register(rs, rs_out);
-    get_register(rt, rt_out);
+    }
+    else{
+        //handle outputs
+        get_register(rs, rs_out);
+        get_register(rt, rt_out);
+    }
 
 }
 
