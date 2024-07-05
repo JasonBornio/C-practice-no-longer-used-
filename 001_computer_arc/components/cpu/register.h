@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <cstring>
-#include "utilities.h"
+#include "instruction.h"
 
 class Reg_32 {
     public:
@@ -18,6 +18,7 @@ class Reg_32 {
 
         void fill_arr_upper(bool _data[], int size);
         void fill_arr_lower(bool _data[], int size);
+        void fill_arr_lower(bool _data[], int size, int offset);
         void fill_ones_upper(int size);
         void fill_ones_lower(int size);
         void clear();
@@ -106,6 +107,16 @@ void Reg_32::fill_arr_lower(bool _data[], int size){
 
     for (int i = 0; i < size; i++){
         data[(constants::g_dim) - size + i] = _data[i];
+    }
+}
+
+void Reg_32::fill_arr_lower(bool _data[], int size, int offset){
+    int total_size = size + offset; 
+    if (size > constants::g_dim) {size = constants::g_dim;}
+    if (total_size > constants::g_dim) {total_size = constants::g_dim;}
+
+    for (int i = 0; i < size; i++){
+        data[(constants::g_dim) - total_size + i] = _data[i];
     }
 }
 
