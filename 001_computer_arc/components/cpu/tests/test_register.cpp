@@ -11,6 +11,7 @@ int main(){
     reg2.set_name("reg2");
 
     reg1.fill_arr_lower(arr, 8);
+    reg1.fill_arr_lower(arr, 8, 8);
     std::cout << "data at index 30: " << reg1.get_data(30) << std::endl;
 
     reg2.fill_arr_upper(arr, 8);
