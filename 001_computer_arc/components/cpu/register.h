@@ -12,6 +12,7 @@ class Reg_32 {
 
         Reg_32 operator|(const Reg_32& r2);
         Reg_32 operator&(const Reg_32& r2);
+        void copy(Reg_32& r2);
 
         void set_name(std::string string);
         void print();
@@ -34,7 +35,7 @@ class Reg_32 {
 };
 
 Reg_32::Reg_32(){
-    strcpy(name, "register");
+    strcpy(this->name, "register");
 }
 
 // Reg_32 Reg_32::operator=(const Reg_32& r2){
@@ -70,6 +71,14 @@ Reg_32 Reg_32::operator&(const Reg_32& r2){
     return reg;
 }
 
+void Reg_32::copy(Reg_32& r2){
+    for(int i = 0; i < constants::g_dim; i++){
+        this->data[i] = r2.data[i];
+    } 
+
+    this->set_name(r2.name);
+}
+
 void Reg_32::set_name(std::string string){
     if (string.size() > 8) {
         std::cout << "that name is too long!"<< std::endl;
@@ -79,16 +88,16 @@ void Reg_32::set_name(std::string string){
     if(8 > string.size())
         string.insert(0, 8 - string.size(), ' ');
 
-    strcpy(name, string.c_str());
+    strcpy(this->name, string.c_str());
 }
 
 
 void Reg_32::print(){
 
-    std::cout << name <<": { ";
+    std::cout << this->name <<": { ";
 
     for (int i = 0; i < constants::g_dim; i++){
-        std::cout << int(data[i]);
+        std::cout << int(this->data[i]);
     }
 
     std::cout <<", val: "<< get_data() << " }"<< std::endl;
@@ -98,7 +107,7 @@ void Reg_32::fill_arr_upper(bool _data[], int size){
     if (size > constants::g_dim) {size = constants::g_dim;}
 
     for (int i = 0; i < size; i++){
-        data[i] = _data[i];
+        this->data[i] = _data[i];
     }
 }
 
@@ -106,7 +115,7 @@ void Reg_32::fill_arr_lower(bool _data[], int size){
     if (size > constants::g_dim) {size = constants::g_dim;}
 
     for (int i = 0; i < size; i++){
-        data[(constants::g_dim) - size + i] = _data[i];
+        this->data[(constants::g_dim) - size + i] = _data[i];
     }
 }
 
@@ -116,7 +125,7 @@ void Reg_32::fill_arr_lower(bool _data[], int size, int offset){
     if (total_size > constants::g_dim) {total_size = constants::g_dim;}
 
     for (int i = 0; i < size; i++){
-        data[(constants::g_dim) - total_size + i] = _data[i];
+        this->data[(constants::g_dim) - total_size + i] = _data[i];
     }
 }
 
@@ -124,7 +133,7 @@ void Reg_32::fill_ones_upper(int size){
     if (size > constants::g_dim) {size = constants::g_dim;}
 
     for (int i = 0; i < size; i++){
-        data[i] = true;
+        this->data[i] = true;
     }
 }
 
@@ -132,26 +141,26 @@ void Reg_32::fill_ones_lower(int size){
     if (size > constants::g_dim) {size = constants::g_dim;}
 
     for (int i = 0; i < size; i++){
-        data[(constants::g_dim) - size + i] = true;
+        this->data[(constants::g_dim) - size + i] = true;
     }
 }
 
 void Reg_32::clear(){
     for (int i = 0; i < constants::g_dim; i++){
-        data[i] = false;
+        this->data[i] = false;
     }
 }
 
 bool Reg_32::get_data(int index){
-    return data[index];
+    return this->data[index];
 }
 
 int Reg_32::get_data(){
-    return bin_to_int(data, constants::g_dim);
+    return bin_to_int(this->data, constants::g_dim);
 }
 
 void Reg_32::get_data_arr(bool arr[32]){
     for (int i = 0; i < 32; ++i) {
-        arr[i] = data[i];
+        arr[i] = this->data[i];
     }
 }
