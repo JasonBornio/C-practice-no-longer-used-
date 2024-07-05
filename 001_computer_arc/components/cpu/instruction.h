@@ -78,6 +78,42 @@ r_type_inst create_r_type_inst(
     return inst;
 }
 
+r_type_inst create_r_type_inst(
+    bool arr[32]
+){
+    r_type_inst inst;
+
+    for (int i = 0; i < 5; i++){
+
+        inst.opcode[i] = arr[i];
+        inst.rs[i] = arr[6 + i];
+        inst.rt[i] = arr[11 + i];
+        inst.rd[i] = arr[16 + i];
+        inst.shamt[i] = arr[21 + i];
+        inst.func[i] = arr[26 + i];
+
+        inst.full[i] = inst.opcode[i];
+        inst.full[6 + i] = inst.rs[i];
+        inst.full[11 + i] = inst.rt[i];
+        inst.full[16 + i] = inst.rd[i];
+        inst.full[21 + i] = inst.shamt[i];
+        inst.full[26 + i] = inst.func[i];
+        
+    }
+
+    inst.opcode[5] = arr[5];
+    inst.func[5] = arr[31];
+
+    inst.int_opcode = bin_to_int(inst.opcode, 6);
+    inst.int_rs = bin_to_int(inst.rs, 5);
+    inst.int_rt = bin_to_int(inst.rt, 5);
+    inst.int_rd = bin_to_int(inst.rd, 5);
+    inst.int_shamt = bin_to_int(inst.shamt, 5);
+    inst.int_func = bin_to_int(inst.func, 6);
+
+    return inst;
+}
+
 immediate_inst create_immediate_inst(
     int opcode,
     int rs,
@@ -110,6 +146,35 @@ immediate_inst create_immediate_inst(
     return inst;
 }
 
+immediate_inst create_immediate_inst(
+    bool arr[32]
+){
+    immediate_inst inst;
+    
+    for (int i = 0; i < 16; i++){
+        if (i < 5){
+            inst.opcode[i] = arr[i];
+            inst.rs[i] = arr[6 + i];
+            inst.rt[i] = arr[11 + i];
+
+            inst.full[i] = inst.opcode[i];
+            inst.full[6 + i] = inst.rs[i];
+            inst.full[11 + i] = inst.rt[i];
+        }
+        inst.imm[i] = arr[i + 16];
+        inst.full[16 + i] = inst.imm[i];
+    }
+
+    inst.opcode[5] = arr[5];
+
+    inst.int_opcode = bin_to_int(inst.opcode, 6);
+    inst.int_rs = bin_to_int(inst.rs, 5);
+    inst.int_rt = bin_to_int(inst.rt, 5);
+    inst.int_imm = bin_to_int(inst.imm, 16);
+
+    return inst;
+}
+
 jump_inst create_jump_inst(
     int opcode,
     int target
@@ -122,7 +187,7 @@ jump_inst create_jump_inst(
     inst.int_opcode = opcode;
     inst.int_target = target;
 
-    for (int i = 0; i < 16; i++){
+    for (int i = 0; i < 26; i++){
         if (i < 6){
             inst.full[i] = inst.opcode[i];
         }
@@ -130,6 +195,27 @@ jump_inst create_jump_inst(
     }
 
     return inst;
+}
+
+jump_inst create_jump_inst(
+    bool arr[32]
+){
+    jump_inst inst;
+
+    for (int i = 0; i < 26; i++){
+        if (i < 6){
+            inst.opcode[i] = arr[i];
+            inst.full[i] = inst.opcode[i];
+        }
+        inst.target[i] = arr[i + 6];
+        inst.full[6 + i] = inst.target[i];
+    }
+
+    inst.int_opcode = bin_to_int(inst.opcode, 6);
+    inst.int_target = bin_to_int(inst.target, 26);
+
+    return inst;
+
 }
 
 void print_r_type_inst(r_type_inst inst){
