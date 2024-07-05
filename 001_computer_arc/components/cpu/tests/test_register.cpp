@@ -44,4 +44,8 @@ int main(){
 
     result.set_name("result");
     result.print();
+
+    reg2.print();
+    reg2.copy(reg1);
+    reg2.print();
 }
