@@ -5,15 +5,12 @@ class Control {
         Control();
 
         void clock_step(bool inputs[][32], int num_inputs, bool control_signal[2]);
-        void get_output(bool array[32]);
+        void get_output(bool array[14]);
+        void set_signals(bool arr[12]);
 
         void print();
 
-    private:
-
-
-
-        bool alu_control[4] = {false, false, false, false};
+        bool alu_control[6] = {false, false, false, false, false, false};
 
         bool alu_src;
         bool reg_dst;
@@ -25,6 +22,8 @@ class Control {
 
         bool jump;
 
+    private:
+        bool signals[14] = {};
 
 };
 
@@ -38,5 +37,29 @@ Control::Control(){
     branch = false;
 
     jump = false;
+
+}
+
+void Control::get_output(bool array[14]){
+    
+    for (int i = 0; i < 6; i++){
+       signals[i] = alu_control[i];
+    }
+
+    signals[6] = alu_src;
+    signals[7] = reg_dst;
+    signals[8] = branch;
+    signals[9] = mem_read;
+    signals[10] = mem_wrt;
+    signals[11] = mem_to_reg;
+    signals[12] = reg_wrt;
+    signals[13] = jump;
+
+}
+
+void Control::set_signals(bool arr[12]){
+    for(int i = 0; i < 6; i++){
+        alu_control[i] = arr[i];
+    }
 }
 
