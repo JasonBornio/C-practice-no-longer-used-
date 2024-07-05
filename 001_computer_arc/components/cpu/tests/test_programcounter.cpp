@@ -2,23 +2,28 @@
 #include <stdio.h>
 
 int main(){
-    Programcounter pc;
+    Program_Counter pc;
+    bool arr[32];
 
     pc.print();
 
     pc.increment();
     pc.print();
 
-    pc.branch(50);
+    int_to_bin(50, arr, 32);
+    pc.branch(arr);
     pc.print();
 
-    pc.jump(120);
+    int_to_bin(120, arr, 32);
+    pc.jump(arr);
     pc.print();
-
-    pc.branch(400);
+        
+    int_to_bin(400, arr, 32);
+    pc.branch(arr);
     pc.print();
-
-    pc.jump(20);
+    
+    int_to_bin(20, arr, 32);
+    pc.jump(arr);
     pc.print();
 
 }
