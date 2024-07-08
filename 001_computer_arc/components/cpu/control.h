@@ -42,7 +42,7 @@ Control::Control(){
     this->jump = false;
 }
 
-void Control::get_output(bool array[1]){
+void Control::get_output(bool array[19]){
     for(int i = 0; i < 19; i++){
         array[i] = this->signals[i];
     }
