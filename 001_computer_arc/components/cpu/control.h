@@ -8,6 +8,7 @@ class Control {
         void set_signals(bool opcode[6], bool func[6]);
 
         void print();
+        void print_desc();
 
     private:
 
@@ -68,6 +69,7 @@ void Control::set_signals(bool opcode[6], bool func[6]){
         }
         else if(func[2]){
             //jump reg
+            this->reg_wrt = true;
             this->jump = true;
             if(func[5]) {this->reg_wrt = true; this->set_reg31 = true;}
         }
@@ -124,11 +126,11 @@ void Control::set_signals(bool opcode[6], bool func[6]){
 
     for (int i = 0; i < 4; i++){
        this->signals[i] = this->alu_control[i];
-       this->signals[i+4] = opcode[i];
+       this->signals[i+4] = opcode[i+2];
     }
 
-    this->signals[8] = opcode[4];
-    this->signals[9] = opcode[5];
+    this->signals[8] = opcode[0];
+    this->signals[9] = opcode[1];
     this->signals[10] = this->alu_src;
     this->signals[11] = this->reg_dst;
     this->signals[12] = this->branch;
@@ -166,4 +168,34 @@ void Control::print(){
     }
 
     std::cout << " }"<< std::endl;
+}
+
+void Control::print_desc(){
+    std::cout << "  control: { " << std::endl;
+
+    std::cout << "   alu_ctrl: {";
+    for (int i = 0; i < 4; i++){
+        std::cout << int(this->signals[i]);
+    }
+    std::cout << "}"<< std::endl;
+
+    std::cout << "    op_code: {";
+    for (int i = 0; i < 4; i++){
+        std::cout << int(this->signals[i + 4]);
+    }
+    std::cout << "}"<< std::endl;
+
+    std::cout << "     op_[8]:  "<< this->signals[8] << std::endl;
+    std::cout << "     op_[9]:  "<< this->signals[9] << std::endl;
+    std::cout << "    alu_src:  "<< this->signals[10] << std::endl;
+    std::cout << "    reg_dst:  "<< this->signals[11] << std::endl;
+    std::cout << "     branch:  "<< this->signals[12] << std::endl;
+    std::cout << "   mem_read:  "<< this->signals[13] << std::endl;
+    std::cout << "    mem_wrt:  "<< this->signals[14] << std::endl;
+    std::cout << "  memto_reg:  "<< this->signals[15] << std::endl;
+    std::cout << "    reg_wrt:  "<< this->signals[16] << std::endl;
+    std::cout << "       jump:  "<< this->signals[17] << std::endl;
+    std::cout << "  set_reg31:  "<< this->signals[18] << std::endl;
+
+    std::cout << "  }"<< std::endl;
 }
