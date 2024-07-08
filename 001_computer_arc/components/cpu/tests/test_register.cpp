@@ -23,12 +23,12 @@ int main(){
 
     result = reg1 | reg2;
 
-    result.set_name("result");
+    result.set_name("or");
     result.print();
 
     result = reg1 & reg2;
 
-    result.set_name("result");
+    result.set_name("and");
     result.print();
 
     reg1.clear();
@@ -42,8 +42,16 @@ int main(){
 
     result = reg1 & reg2;
 
-    result.set_name("result");
+    result.set_name("and");
     result.print();
+
+    result = reg1 ^ reg2;
+
+    result.set_name("xor");
+    result.print();
+
+    reg1 = ~reg1;
+    reg1.print();
 
     reg2.print();
     reg2.copy(reg1);
