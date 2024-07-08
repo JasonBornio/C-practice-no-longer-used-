@@ -5,7 +5,7 @@ class Control {
         Control();
 
         void get_output(bool array[19]);
-        void set_signals(bool arr[12]);
+        void set_signals(bool opcode[6], bool func[6]);
 
         void print();
 
@@ -48,30 +48,30 @@ void Control::get_output(bool array[1]){
     }
 }
 
-void Control::set_signals(bool arr[12]){
+void Control::set_signals(bool opcode[6], bool func[6]){
 
     reset_signals();
 
     bool r_type = true;
 
     for (int i = 0; i < 6; i++){
-        if(arr[i]) r_type = false;
+        if(opcode[i]) r_type = false;
     }
 
     if(r_type){
-        if (arr[6]){
+        if (func[0]){
             //alu inst
             for(int i = 0; i < 4; i++){
-                this->alu_control[i] = arr[i+8];
+                this->alu_control[i] = func[i+2];
             }
             this->reg_wrt = true;
         }
-        else if(arr[8]){
+        else if(func[2]){
             //jump reg
             this->jump = true;
-            if(arr[11]) {this->reg_wrt = true; this->set_reg31 = true;}
+            if(func[5]) {this->reg_wrt = true; this->set_reg31 = true;}
         }
-        else if(arr[8] && arr[9]){
+        else if(func[2] && func[3]){
             //other
         }
         else{
@@ -82,9 +82,9 @@ void Control::set_signals(bool arr[12]){
     }
     else{
         //this->reg_dst = true;
-        if(arr[0]){
+        if(opcode[0]){
             //mem access imm
-            if(arr[2]){
+            if(opcode[2]){
                 //store
                 this->mem_wrt = true;
                 this->alu_src = true;
@@ -99,10 +99,10 @@ void Control::set_signals(bool arr[12]){
                 this->alu_src = true;
             }
         }
-        else if(arr[1]){
+        else if(opcode[1]){
             //other
         }
-        else if(arr[2]){
+        else if(opcode[2]){
             //alu imm
             //using alu
             this->alu_control[3] = false;
@@ -110,7 +110,7 @@ void Control::set_signals(bool arr[12]){
             this->reg_dst = true;
             this->reg_wrt = true;
         }
-        else if(!arr[3] && arr[4]){
+        else if(!opcode[3] && opcode[4]){
             this->jump = true;
         }
         else{
@@ -124,11 +124,11 @@ void Control::set_signals(bool arr[12]){
 
     for (int i = 0; i < 4; i++){
        this->signals[i] = this->alu_control[i];
-       this->signals[i+4] = arr[i];
+       this->signals[i+4] = opcode[i];
     }
 
-    this->signals[8] = arr[4];
-    this->signals[9] = arr[5];
+    this->signals[8] = opcode[4];
+    this->signals[9] = opcode[5];
     this->signals[10] = this->alu_src;
     this->signals[11] = this->reg_dst;
     this->signals[12] = this->branch;
