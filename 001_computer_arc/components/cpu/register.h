@@ -12,6 +12,8 @@ class Reg_32 {
 
         Reg_32 operator|(const Reg_32& r2);
         Reg_32 operator&(const Reg_32& r2);
+        Reg_32 operator^(const Reg_32& r2);
+        Reg_32 operator~();
         void copy(Reg_32& r2);
 
         void set_name(std::string string);
@@ -71,12 +73,32 @@ Reg_32 Reg_32::operator&(const Reg_32& r2){
     return reg;
 }
 
+Reg_32 Reg_32::operator^(const Reg_32& r2){
+    Reg_32 reg;
+
+    for(int i = 0; i < constants::g_dim; i++){
+        reg.data[i] = this->data[i] ^ r2.data[i];
+    } 
+
+    return reg;
+}
+
+Reg_32 Reg_32::operator~(){
+    Reg_32 reg;
+
+    for(int i = 0; i < constants::g_dim; i++){
+        reg.data[i] = !this->data[i];
+    } 
+
+    return reg;
+}
+
 void Reg_32::copy(Reg_32& r2){
     for(int i = 0; i < constants::g_dim; i++){
         this->data[i] = r2.data[i];
     } 
 
-    this->set_name(r2.name);
+    //this->set_name(r2.name);
 }
 
 void Reg_32::set_name(std::string string){
