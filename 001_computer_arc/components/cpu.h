@@ -165,13 +165,12 @@ void Cpu::instruction_decode(){
         
     //decode inst
     bool opcode[6];
-    bool op_func[12];
+    bool func[6];
     bool jump = true;
 
     for (int i = 0; i < 6; i++){
         opcode[i] = if_id_reg[1].get_data(i);
-        op_func[i] = if_id_reg[1].get_data(i);
-        op_func[i + 6] = if_id_reg[1].get_data(i + 26);
+        func[i] = if_id_reg[1].get_data(i+26);
         if(i < 4 && opcode[i]){
             jump = false;
         }
@@ -244,7 +243,7 @@ void Cpu::instruction_decode(){
 
     //control signals
     bool signals[19];
-    control.set_signals(op_func);
+    control.set_signals(opcode, func);
     control.get_output(signals);
     id_ex_reg[4].fill_arr_upper(signals, 19);
 
