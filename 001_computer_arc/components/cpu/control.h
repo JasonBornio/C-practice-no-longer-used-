@@ -9,6 +9,8 @@ class Control {
 
         void print();
 
+    private:
+
         bool alu_control[4] = {true, true, true, true };
 
         bool alu_src;
@@ -22,7 +24,6 @@ class Control {
 
         bool jump;
 
-    private:
         bool signals[19] = {};
         void reset_signals();
 
