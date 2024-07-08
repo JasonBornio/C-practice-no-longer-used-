@@ -300,3 +300,78 @@ void print_jump_inst(jump_inst inst){
 
     std::cout << "|" << std::endl;
 }
+
+/*
+INSTRUCTIONS
+opcode 6 bits, function code 6 bits
+
+128 unique insts
+64 rtype
+64 imm/jump
+
+ALU:_________________________
+rtypes:
+1.ADD   0| Op: 000000 | func: 10|0000 rd funct[0] !alu zero, alu code func[2:] 
+2.ADDU  1| Op: 000000 | func: 10|0001 rd if alu ! func[2] = jump, func[2] & func[3] = other
+3.AND   4| Op: 000000 | func: 10|0100 rd op[0] = mem acess/ wrt rt, + op[2] mem acess 
+4.NOR   7| Op: 000000 | func: 10|0111 rd op[1] = other
+5.OR    5| Op: 000000 | func: 10|0101 rd op[2] = imm / wrt rt /wb
+6.SLT  10| Op: 000000 | func: 10|1010 rd else branch /
+7.SLTU 11| Op: 000000 | func: 10|1011 rd 0 zero /
+8.SUB   2| Op: 000000 | func: 10|0010 rd
+9.SUBU  3| Op: 000000 | func: 10|0011 rd
+10.XOR  6| Op: 000000 | func: 10|0110 rd
+
+imm:
+11.ADDI 8| Op: 001000 rt 2 zeros 
+12.ADDIU9| Op: 001001 rt        
+13.ANDI12| Op: 001100 rt
+14.LUI 15| Op: 001111 rt
+15.ORI 13| Op: 001101 rt
+16.SLTI10| Op: 001010 rt
+17.SLTIU11| Op: 001011 rt
+18.XORI14| Op: 001110 rt
+Shifter:______________________________
+rtype:
+19.SLL   | Op: 000000 | func: 000|000 rd
+20.SLLV  | Op: 000000 | func: 000|100 rd
+21.SRA   | Op: 000000 | func: 000|011 rd
+22.SRAV  | Op: 000000 | func: 000|111 rd
+23.SRL   | Op: 000000 | func: 000|010 rd
+24.SRLV  | Op: 000000 | func: 000|110 rd
+Branch:______________________________
+imm:
+25.BEQ   | Op: 000100 pc 3-5 zeros
+26.BGEZ  | Op: 000001 pc
+27.BGEZAL| Op: 000001 pc
+28.BGTZ  | Op: 000111 
+29.BLEZ  | Op: 000110
+30.BLTZ  | Op: 000001 
+31.BLTZAL| Op: 000001
+32.BNE   | Op: 000101
+
+jump:
+33.J     | Op: 000010
+34.JAL   | Op: 000011 4-zeros
+
+rtype:
+35.JALR  | Op: 000000 | func: 001001 rd
+36.JR    | Op: 000000 | func: 001000 
+
+unknown:
+37.BREAK | Op: 000000 | func: 001101 
+38.MFC0  | Op: 010000 | func: 
+39.MTC0  | Op: 010000 r1 zero
+40.SYSCAL| Op: 000000 | func: 001100 f2 zeros
+
+memacess:___________________________
+imm:
+41.LB    | Op: 100000
+42.LBU   | Op: 100100 0 zeros
+43.LH    | Op: 100001
+44.LHU   | Op: 100101
+45.LW    | Op: 100011
+46.SB    | Op: 101000
+47.SH    | Op: 101001
+48.SW    | Op: 101011
+*/
