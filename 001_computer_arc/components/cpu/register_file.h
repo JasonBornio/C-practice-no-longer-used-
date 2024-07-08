@@ -103,7 +103,7 @@ void Register_File::clk_step(int _rs, int _rt, int _rd, bool _wb_data[32], bool 
     rd = _rd;
     
     //wrt back
-    if(reg_write){
+    if(_reg_wrt){
         for (int i = 0; i < 32; ++i) {
             wb_data[i] = _wb_data[i];
         }
