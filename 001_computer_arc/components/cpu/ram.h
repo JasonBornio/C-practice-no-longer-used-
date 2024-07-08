@@ -11,8 +11,9 @@ class Random_Access_Memory {
         void inst_clk_step(bool _address[32]);
         void get_data_out(bool arr[32]);
         void load_instructions(bool arr[][32], int length);
+        int get_top_inst_pointer();
 
-        void print();
+        void print(int num);
         void print_data();
         void print_instructions();
         void print_stack();
@@ -83,6 +84,8 @@ void Random_Access_Memory::data_clk_step(bool _address[32], bool write_data[32],
     mem_write = _mem_wrt;
     mem_read = _mem_read;
     address = bin_to_int(_address, 32);
+
+    //std::cout<<"ADRESS"<< address<< std::endl;
     
     for (int i = 0; i < 32; ++i) {
         data_in[i] = write_data[i];
@@ -126,6 +129,11 @@ void Random_Access_Memory::load_instructions(bool arr[][32], int length){
     if(text_pointers[2] > text_pointers[1]) text_pointers[2] = text_pointers[1] + 4;
 
 }
+
+int Random_Access_Memory::get_top_inst_pointer(){
+    return text_pointers[2];
+}
+
 void Random_Access_Memory::print(int lower_bound, int upper_bound){
     for(int i = lower_bound; i < upper_bound; i++){
 
@@ -139,10 +147,12 @@ void Random_Access_Memory::print(int lower_bound, int upper_bound){
     }
 }
 
-void Random_Access_Memory::print(){
+void Random_Access_Memory::print(int num){
+
+    if (num > 1024) num = 1024;
 
     std::cout << "      ram::" << std::endl;
-    print(0, 1024);
+    print(0, num);
     
 }
 
