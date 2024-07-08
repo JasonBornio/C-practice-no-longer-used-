@@ -3,7 +3,7 @@
 int main(){
     Random_Access_Memory ram;
 
-    //ram.print();
+    ram.print(40);
 
     bool arr[32];
     bool address[32];
@@ -48,5 +48,15 @@ int main(){
     reg.print();
     reg2.set_name("empt $r2");
     reg2.print();
+
+    r_type_inst inst = create_r_type_inst(5,6,7,8,9,10);
+    bool arr3[1][32];
+    
+    for(int i = 0; i < 32; i++){
+        arr3[0][i] = inst.full[i];
+    }
+
+    ram.load_instructions(arr3, 1);
+    std::cout<<"pointer:"<<ram.get_top_inst_pointer();
 
 }
