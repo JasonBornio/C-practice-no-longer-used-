@@ -1,4 +1,4 @@
-#include "programcounter.h"
+#include "shifter.h"
 
 class Arithmetic_Logic_Unit {
     public:
@@ -10,15 +10,24 @@ class Arithmetic_Logic_Unit {
 
     private:
         Adder_32 adder;
+        Shifter shift_left;
         Reg_32 output;
         Reg_32 zero_reg;
+        Reg_32 one_reg;
         bool _zero;
+        bool buffer[32];
+        bool shamt[5];
+        bool reg_wrt;
+        bool rd[5];
 
 };
 
 Arithmetic_Logic_Unit::Arithmetic_Logic_Unit(){
     zero_reg.clear();
+    one_reg.clear();
+    one_reg.fill_ones_lower(1);
     _zero = false;
+    reg_wrt = false;
 }
 
 void Arithmetic_Logic_Unit::clock_step(Reg_32 A, Reg_32 B, bool control[4], bool opcode[6]){
@@ -31,12 +40,46 @@ void Arithmetic_Logic_Unit::clock_step(Reg_32 A, Reg_32 B, bool control[4], bool
 
     int op =  bin_to_int(code, 4);
 
+    _zero = false;
+
     if (opcode[0]){
         output = adder.add(A, B);
     }
+
     //immm alu
-    else if(op && ctrl < 15){
+    else if(op){
         switch(op){
+            case 1: 
+                //bgez, bgezal, blezal, bltz
+                break;
+            case 4: 
+                //beq
+                if(A.get_data() == B.get_data()){
+                    _zero = true;
+                }
+                output = zero_reg;
+                break;
+            case 5: 
+                //bne
+                if(A.get_data() != B.get_data()){
+                    _zero = true;
+                }
+                output = zero_reg;
+                break;
+            case 6: 
+                //blez
+                if(A.get_data() <= B.get_data()){
+                    _zero = true;
+                }
+                output = zero_reg;
+                break;
+            case 7: 
+                //bgtz
+                if(A.get_data() > B.get_data()){
+                    _zero = true;
+                }
+                output = zero_reg;
+                break;
             case 8: 
                 //addi
                 std::cout<<"::::::::::ADDI"<<std::endl;
@@ -50,12 +93,20 @@ void Arithmetic_Logic_Unit::clock_step(Reg_32 A, Reg_32 B, bool control[4], bool
             case 10: 
                 //slti
                 std::cout<<"::::::::::SLTI"<<std::endl;
-                output = output;//A & B;
+                if (A.get_data() < B.get_data()){
+                    output = one_reg;
+                }else{
+                    output = zero_reg;
+                }
                 break; 
             case 11: 
                 //sltiu
                 std::cout<<"::::::::::SLTIU"<<std::endl;
-                output = output;//A & B;
+                if (A.get_data() < B.get_data()){
+                    output = one_reg;
+                }else{
+                    output = zero_reg;
+                }
                 break;
             case 12: 
                 ////andi
@@ -75,7 +126,11 @@ void Arithmetic_Logic_Unit::clock_step(Reg_32 A, Reg_32 B, bool control[4], bool
             case 15: 
                 //lui
                 std::cout<<"::::::::::LUI"<<std::endl;
-                output = output;//A & B;
+                int_to_bin(16, shamt, 5);
+                B.get_data_arr(buffer);
+                shift_left.clock_step(buffer, shamt);
+                shift_left.get_output(buffer);
+                output.fill_arr_lower(buffer, 32);
                 break;
 
             default:
@@ -127,18 +182,35 @@ void Arithmetic_Logic_Unit::clock_step(Reg_32 A, Reg_32 B, bool control[4], bool
                 output = ~zero_reg;
                 zero_reg.clear();
                 break;
+            case 8: 
+                //jr
+                std::cout<<"::::::::::JR"<<std::endl;
+                output = zero_reg;
+                break;
+            case 9: 
+                //jalr
+                std::cout<<"::::::::::JALR"<<std::endl;
+                output = B;
+                break;
             case 10: 
                 //slt
                 std::cout<<"::::::::::SLT"<<std::endl;
-                output = output;//A & B;
+                if (A.get_data() < B.get_data()){
+                    output = one_reg;
+                }else{
+                    output = zero_reg;
+                }
                 break;
             case 11: 
                 //sltu
                 std::cout<<"::::::::::SLTU"<<std::endl;
-                output = output;//A & B;
+                if (A.get_data() < B.get_data()){
+                    output = one_reg;
+                }else{
+                    output = zero_reg;
+                }
                 break;
             //branch
-
 
             //no alu
             case 15:
