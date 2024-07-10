@@ -1,0 +1,10 @@
+addi $zero, $t5, 1;
+sw $zero, 516 ($t5);
+
+//testing loop
+loop: add $t4, $t5, $t4;
+//bne $t1, $zero, loop;
+addi $s2, $s2, 20;
+
+j loop;
+jr $ra;
