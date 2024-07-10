@@ -7,7 +7,7 @@ class Random_Access_Memory {
 
         Random_Access_Memory();
 
-        void data_clk_step(bool _address[32], bool write_data[32], bool _mem_wrt, bool _mem_read);
+        void data_clk_step(bool _address[32], bool input_data[32], bool _mem_wrt, bool _mem_read, bool control[3]);
         void inst_clk_step(bool _address[32]);
         void get_data_out(bool arr[32]);
         void load_instructions(bool arr[][32], int length);
@@ -31,14 +31,15 @@ class Random_Access_Memory {
         //inputs
         bool mem_write;
         bool mem_read;
-        bool data_in[32] = {};
         int address;
 
         //outputs
         bool data_out[32] = {};
 
-        void write_data(int address, bool data[8]);
-        void read_data(int address, bool arr[8]);
+        void write_byte(int address, bool data[8]);
+        void read_byte(int address, bool arr[8]);
+        void write_half(int address, bool data[16]);
+        void read_half(int address, bool arr[16]);
         void write_word(int address, bool data[32]);
         void read_word(int address, bool arr[32]);
 
@@ -50,15 +51,29 @@ Random_Access_Memory::Random_Access_Memory(){
     address = 0;
 }
 
-void Random_Access_Memory::write_data(int address, bool data[8]){
+void Random_Access_Memory::write_byte(int address, bool data[8]){
     for(int i = 0; i < 8; i ++){
         memory[address][i] = data[i];
     }
 }
 
-void Random_Access_Memory::read_data(int address, bool arr[8]){
+void Random_Access_Memory::read_byte(int address, bool arr[8]){
     for(int i = 0; i < 8; i ++){
         arr[i] = memory[address][i];
+    }
+}
+
+void Random_Access_Memory::write_half(int address, bool data[16]){
+    for(int i = 0; i < 8; i ++){
+        memory[address][i+1] = data[i];
+        memory[address][i] = data[i+8];
+    }
+}
+
+void Random_Access_Memory::read_half(int address, bool arr[16]){
+    for(int i = 0; i < 8; i ++){
+        arr[i] = memory[address+1][i];
+        arr[i+8] = memory[address][i];
     }
 }
 
@@ -80,22 +95,87 @@ void Random_Access_Memory::read_word(int address, bool arr[32]){
     }
 }
 
-void Random_Access_Memory::data_clk_step(bool _address[32], bool write_data[32], bool _mem_wrt, bool _mem_read){
+void Random_Access_Memory::data_clk_step(bool _address[32], bool input_data[32], bool _mem_wrt, bool _mem_read, bool control[3]){
     mem_write = _mem_wrt;
     mem_read = _mem_read;
     address = bin_to_int(_address, 32);
+    int ctrl = bin_to_int(control, 3);
 
     //std::cout<<"ADRESS"<< address<< std::endl;
-    
-    for (int i = 0; i < 32; ++i) {
-        data_in[i] = write_data[i];
+
+    if(mem_write){
+        switch(ctrl){
+            case 0:
+                bool data_in[32];
+                if (input_data[24]){
+                    for(int i = 0; i <24; i++){
+                        data_in[i] = true;     
+                    }
+                }else{
+                    for(int i = 0; i <24; i++){
+                        data_in[i] = false;     
+                    }
+                }
+                for(int i = 0; i < 8; i++){
+                    data_in[i+ 24] = input_data[i+24];     
+                }
+                write_word(address, input_data);
+                break;
+            case 1:
+                bool data_in1[32];
+                if (input_data[16]){
+                    for(int i = 0; i <16; i++){
+                        input_data[i] = true;     
+                    }
+                }else{
+                    for(int i = 0; i <16; i++){
+                        input_data[i] = false;     
+                    }
+                }
+                for(int i = 0; i < 8; i++){
+                    data_in1[i+ 16] = input_data[i+16];     
+                }
+                write_word(address, data_in1);
+                break;
+            case 3:
+                write_word(address, input_data);
+                break;
+            case 4:
+                bool byte_in[8];
+                for (int i = 0; i < 8; i++) {
+                    byte_in[i] = input_data[i+16];
+                }
+                write_byte(address, byte_in);
+                break;
+            case 5:
+                bool half_in[16];
+                for (int i = 0; i < 16; i++) {
+                    half_in[i] = input_data[i+16];
+                }
+                write_half(address, half_in);
+                break;
+            default:
+                write_word(address, input_data);
+                break;
+        }
     }
 
-    if(mem_write)
-        write_word(address, data_in);
-
-    if(mem_read)
-        read_word(address, data_out);
+    if(mem_read){
+        switch(ctrl){
+            case 0:
+                read_byte(address, data_out);
+                break;
+            case 1:
+                read_half(address, data_out);
+                break;
+            case 3:
+                read_word(address, data_out);
+                break;
+            default:
+                read_word(address, data_out);
+                break;
+        }
+    }
 }
 
 void Random_Access_Memory::inst_clk_step(bool _address[32]){
