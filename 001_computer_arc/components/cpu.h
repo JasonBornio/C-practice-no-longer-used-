@@ -39,6 +39,7 @@ class Cpu {
         Multiplexer_2 multiplexers[5];
         Sign_Extend sign_extend;
         Adder_32 adder;
+        Shifter shift_left;
 
         bool pc_src;
 
@@ -98,7 +99,7 @@ void Cpu::execute_instructions(int num){
     while (pc.get_pc() <  ram.get_top_inst_pointer() + 4 && count < num){
         clock_step();
         //print_pipeline_registers();
-        pc.print();
+        //pc.print();
         count += 1;
     }
 }
@@ -130,9 +131,8 @@ void Cpu::instruction_fetch(){
     id_ex_reg[3].get_data_arr(arr);
 
     //shifter
-    for (int i = 0; i < 30; i ++){
-        arr[i] = arr[i+2];
-    }
+    shift_left.shift(arr);
+    shift_left.get_output(arr);
     id_ex_reg[3].fill_arr_lower(arr, 32);
 
     for (int i = 0; i < 32; i ++){
@@ -181,14 +181,14 @@ void Cpu::instruction_decode(){
     int opcode_int = bin_to_int(opcode, 6);
 
     if(jump && opcode[4]){
-        std::cout<<"JUMP"<<std::endl;
+        //std::cout<<"JUMP"<<std::endl;
         //jump
         jump_inst instruction = create_jump_inst(buffer);
         id_ex_reg[3].fill_arr_lower(instruction.target, 26);
     }
     else if (opcode_int){
         //imm
-        std::cout<<"IMMM"<<std::endl;
+        //std::cout<<"IMMM"<<std::endl;
         immediate_inst instruction = create_immediate_inst(buffer);
 
         //mem_wb_reg[1].get_data_arr(buffer);
@@ -228,13 +228,22 @@ void Cpu::instruction_decode(){
             false
         );
 
+        registers.get_rt(buffer);
+        id_ex_reg[2].fill_arr_lower(buffer, 32);
         //get registers
         registers.get_rs(buffer);
         id_ex_reg[1].fill_arr_lower(buffer, 32);
-        registers.get_rt(buffer);
-        id_ex_reg[2].fill_arr_lower(buffer, 32);
-        
-        id_ex_reg[3].fill_arr_lower(instruction.shamt, 5);
+
+        if(!func[0] && func[2]){
+            std::cout<<"JUMP"<<std::endl;
+            //jump
+            id_ex_reg[3].fill_arr_lower(buffer, 32);
+            pc.get_pc(buffer);
+            id_ex_reg[2].fill_arr_lower(buffer, 32);
+        }
+        else{
+            id_ex_reg[3].fill_arr_lower(instruction.shamt, 5);
+        }
 
         id_ex_reg[4].fill_arr_lower(instruction.rt, 5);
         id_ex_reg[4].fill_arr_lower(instruction.rd, 5, 5);
@@ -316,30 +325,40 @@ void Cpu::execute(){
     ex_mem_reg[3].fill_arr_lower(buffer, 32);
 
     //control signals
-    bool signals[7] = {
+    bool signals[11] = {
         id_ex_reg[4].get_data(12),
         id_ex_reg[4].get_data(13),
         id_ex_reg[4].get_data(14),
         id_ex_reg[4].get_data(15),
         id_ex_reg[4].get_data(16),
         id_ex_reg[4].get_data(17),
-        alu.zero()
+        alu.zero(),
+        id_ex_reg[4].get_data(4),
+        id_ex_reg[4].get_data(5),
+        id_ex_reg[4].get_data(6),
+        id_ex_reg[4].get_data(7)
     };
-    ex_mem_reg[3].fill_arr_upper(signals, 7);
+    ex_mem_reg[3].fill_arr_upper(signals, 11);
 }
  
 void Cpu::memory_acess(){
 
     //memory access
     bool data_reg[32];
+    bool ram_ctrl[4];
     ex_mem_reg[1].get_data_arr(buffer);
     ex_mem_reg[2].get_data_arr(data_reg);
+
+    for(int i = 0; i<4; i++){
+        ram_ctrl[i] = ex_mem_reg[3].get_data(7+i);
+    }
 
     ram.data_clk_step(
         buffer, 
         data_reg, 
         ex_mem_reg[3].get_data(2),
-        ex_mem_reg[3].get_data(1)
+        ex_mem_reg[3].get_data(1),
+        ram_ctrl
     );
     
     ram.get_data_out(buffer);
