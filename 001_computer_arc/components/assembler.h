@@ -17,7 +17,7 @@ map<string, array<int,3>> instruction_map = {
     {"or",     array<int,3>{0, 0, 37} },
     {"slt",    array<int,3>{0, 0, 42} },
     {"sltu",   array<int,3>{0, 0, 43} },
-    {"sub",    array<int,3>{0, 0, 24} },
+    {"sub",    array<int,3>{0, 0, 34} },
     {"subu",   array<int,3>{0, 0, 35} },
     {"xor",    array<int,3>{0, 0, 38} },
 
@@ -122,15 +122,17 @@ class Assembler{
         int num_lines;
         int num_insts;
         vector<array<bool, 32>> instructions;
+        bool abort;
+
         void pause();
 };
 
 Assembler::Assembler(Cpu& input_cpu){
     cpu = input_cpu;
+    abort = false;
 }
 
 void Assembler::load_file(string file_name, bool pause_bool){
-
     string myText;
     ifstream MyReadFile(file_name);
 
@@ -152,13 +154,14 @@ void Assembler::load_file(string file_name, bool pause_bool){
     else std::cout << "ERROR reading file";
 
     vector<vector<string>> list = {};
+    abort = false;
 
     for (int i = 0; i < num_lines; i++){
         string line = lines[i];
         const char *cstr = line.c_str();
 
         char temp[7] = {'\0','\0','\0','\0','\0','\0','\0'};
-        vector<string> values = {};
+        vector<string> values = {to_string(i+1)};
         int index = 0;
         bool push = false;
         char chr;
@@ -187,6 +190,8 @@ void Assembler::load_file(string file_name, bool pause_bool){
                 
                 index = 0;
 
+                if(chr==';') break;
+
             }
             else{
                 temp[index] = chr;
@@ -196,7 +201,8 @@ void Assembler::load_file(string file_name, bool pause_bool){
 
         if(push) {
             if(chr != ';'){
-                cerr << "statement missing: ';' "<<endl; 
+                cerr << "ERROR: statement missing: ';', line: "<< i+1 <<endl; 
+                abort =  true;
                 return;
             }
             else{
@@ -207,6 +213,34 @@ void Assembler::load_file(string file_name, bool pause_bool){
 
     }
     
+    for(int i = 0; i < list.size(); i++){
+
+        string code = list[i][1];
+        code.erase(std::remove(code.begin(), code.end(), ','), code.end());
+        code.erase(std::remove(code.begin(), code.end(), '('), code.end());
+        code.erase(std::remove(code.begin(), code.end(), ')'), code.end());
+        code.erase(std::remove(code.begin(), code.end(), ':'), code.end());
+
+        //std::cout<<code << ": ";
+
+
+        if (instruction_map.find(code) == instruction_map.end()) {
+            // not found
+            if (address_map.find(code) == address_map.end()) {
+                //not found
+                address_map.insert({code, address_pointer}); 
+            }
+            else{
+                //found
+                cerr << "ERROR: address name: '"<< code << "' used more than once, line: "<< list[i][0] <<endl; 
+                abort = true;
+                return;
+            }
+        } 
+        address_pointer += 4;        
+    }
+
+    address_pointer = 64;
     for(int i = 0; i < list.size(); i++){
         int count = 0;
         int type = 0;
@@ -225,8 +259,8 @@ void Assembler::load_file(string file_name, bool pause_bool){
 
         bool imm_value = false;
 
-        for (int j = 0; j <list[i].size(); j++){
-            string code = list[i][j];
+        for (int j = 0; j <list[i].size() - 1; j++){
+            string code = list[i][j + 1];
             code.erase(std::remove(code.begin(), code.end(), ','), code.end());
             code.erase(std::remove(code.begin(), code.end(), '('), code.end());
             code.erase(std::remove(code.begin(), code.end(), ')'), code.end());
@@ -237,15 +271,7 @@ void Assembler::load_file(string file_name, bool pause_bool){
             if(count == 0){
                 if (instruction_map.find(code) == instruction_map.end()) {
                     // not found
-                    if (address_map.find(code) == address_map.end()) {
-                        address_map.insert({code, address_pointer}); 
-                        //std::cout<<address_map.at(code)<<"| ";
                         value = address_map.at(code);
-                    }
-                    else{
-                        //std::cout<<address_map.at(code)<<"| ";
-                        value = address_map.at(code);
-                    }
                 } else {
                     // found
                     inst = instruction_map.at(code);
@@ -259,13 +285,25 @@ void Assembler::load_file(string file_name, bool pause_bool){
                     //not found
                     if (address_map.find(code) == address_map.end()) {
                         //std::cout<<code<<"| ";
-                        value = stoi(code);
+                        try{
+                            value = stoi(code);
+                        }
+                        catch(...){
+                            cerr << "ERROR: address: '" << code <<"' not defined, line: "<< list[i][0] <<endl; 
+                            abort = true;
+                            return;
+                        }
                         imm_value = true;
                     }
                     else{
                         //std::cout<<address_map.at(code)<<"| ";
                         value = address_map.at(code);
+                        int targ = value;
                         imm_value = true;
+                        if(type == 1 && opcode < 8){
+                            value = ((value - address_pointer)/4) - 1;
+                            std::cout<<"branch: "<< value <<" current address: "<<address_pointer<<" target: "<<targ<<endl; 
+                        }
                     }
                 } else {
                     // found
@@ -388,7 +426,9 @@ void Assembler::load_file(string file_name, bool pause_bool){
 }
 
 void Assembler::run(int num, bool pause_bool){
+    if (abort) return;
     cpu.execute_instructions(num);
+    std::cout<<"hi"<<endl;
     if (pause_bool) pause();
 }
 
@@ -402,14 +442,17 @@ void Assembler::pause(){
     while (buffer[0] != 'y');
 }
 void Assembler::show_registers(bool pause_bool){
+    if (abort) return;
     cpu.print_registers();
     if (pause_bool) pause();
 }
 void Assembler::show_ram_data(bool pause_bool){
+    if (abort) return;
     cpu.print_data();
     if (pause_bool) pause();
 }
 void Assembler::show_instructions(bool pause_bool){
+    if (abort) return;
     cpu.print_instructions();
     if (pause_bool) pause();
 }
