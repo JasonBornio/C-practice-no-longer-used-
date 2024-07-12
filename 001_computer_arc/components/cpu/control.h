@@ -126,11 +126,11 @@ void Control::set_signals(bool opcode[6], bool func[6]){
 
     for (int i = 0; i < 4; i++){
        this->signals[i] = this->alu_control[i];
-       this->signals[i+4] = opcode[i+2];
+       this->signals[i+4] = opcode[i];
     }
 
-    this->signals[8] = opcode[0];
-    this->signals[9] = opcode[1];
+    this->signals[8] = opcode[4];
+    this->signals[9] = opcode[5];
     this->signals[10] = this->alu_src;
     this->signals[11] = this->reg_dst;
     this->signals[12] = this->branch;
