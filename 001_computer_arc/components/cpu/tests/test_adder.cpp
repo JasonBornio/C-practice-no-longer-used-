@@ -33,9 +33,14 @@ int main(){
     result.set_name("result");
     result.print();
 
-    std::cout<< "add 32 to reg1:" << std::endl;
+    std::cout<< "add -32 to reg1:" << std::endl;
 
-    result = adder.add_int(reg1, 32);
+    bool neg_arr[32];
+    int_to_bin(-22, neg_arr, 32);
+    print_bin(neg_arr, 32);
+
+    result = adder.add_int(reg1, -22);
+    std::cout << "overflow: "<< adder.overflow_flag<<std::endl;
     result.set_name("result");
     result.print();
-}
+} 
