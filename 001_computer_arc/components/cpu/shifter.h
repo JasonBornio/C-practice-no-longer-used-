@@ -4,9 +4,12 @@ class Shifter {
     public:
         Shifter();
         
-        void clock_step(bool arr[32], bool shamt[5]);
+        void clock_step(bool arr[32], bool shamt[32], int ctrl);
         void shift(bool arr[32]);
         void get_output(bool array[32]);
+
+        void shift_left(bool arr[32], int num);
+        void shift_right(bool arr[32], int num);
 
         void print();
 
@@ -20,17 +23,57 @@ Shifter::Shifter(){
 
 }
 
-void Shifter::clock_step(bool arr[32], bool shamt[5]){
-    int shift_amount = bin_to_int(shamt, 5);
-    int size = 32 - shift_amount;
+void Shifter::clock_step(bool arr[32], bool shamt[32], int ctrl){
+    int shift_amount = bin_to_int(shamt, 32);
+    std::cout<< shift_amount<<std::endl;
 
-    for(int i = 0; i < size; i++){
-        output[i] = arr[i + shift_amount];
+    switch(ctrl){
+        case 0:
+            shift_left(arr, shift_amount);
+            break;
+        case 2:
+            shift_right(arr, shift_amount);
+            break;
+        case 3:
+            shift_right(arr, shift_amount);
+            break;        
+        case 4:
+            shift_left(arr, shift_amount);
+            break;        
+        case 6:
+            shift_right(arr, shift_amount);
+            break;        
+        case 7:
+            shift_right(arr, shift_amount);
+            break;        
+        default:
+            shift_left(arr, shift_amount);
+            break;
     }
-    for(int i = 0; i < shift_amount; i++){
+}
+
+void Shifter::shift_left(bool arr[32], int num){
+
+    int size = 32 - num;
+    
+    for(int i = 0; i < size; i++){
+        output[i] = arr[i + num];
+    }
+    for(int i = 0; i < num; i++){
         output[i + size] = false;
     }
+}
 
+void Shifter::shift_right(bool arr[32], int num){
+
+    int size = 32 - num;
+    
+    for(int i = 0; i < size; i++){
+        output[i + num] = arr[i];
+    }
+    for(int i = 0; i < num; i++){
+        output[i] = false;
+    }
 }
 
 void Shifter::shift(bool arr[32]){
