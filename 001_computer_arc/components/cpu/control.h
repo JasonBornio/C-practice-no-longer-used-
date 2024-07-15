@@ -4,7 +4,7 @@ class Control {
     public:
         Control();
 
-        void get_output(bool array[19]);
+        void get_output(bool array[21]);
         void set_signals(bool opcode[6], bool func[6]);
 
         void print();
@@ -12,7 +12,7 @@ class Control {
 
     private:
 
-        bool alu_control[4] = {true, true, true, true };
+        bool alu_control[6] = {true, true, true, true, true, true};
 
         bool alu_src;
         bool reg_dst;
@@ -43,8 +43,8 @@ Control::Control(){
     this->jump = false;
 }
 
-void Control::get_output(bool array[19]){
-    for(int i = 0; i < 19; i++){
+void Control::get_output(bool array[21]){
+    for(int i = 0; i < 21; i++){
         array[i] = this->signals[i];
     }
 }
@@ -59,11 +59,13 @@ void Control::set_signals(bool opcode[6], bool func[6]){
         if(opcode[i]) r_type = false;
     }
 
+    int code = bin_to_int(func ,6);
+
     if(r_type){
-        if (func[0]){
+        if (func[0] || code < 8){
             //alu inst
-            for(int i = 0; i < 4; i++){
-                this->alu_control[i] = func[i+2];
+            for(int i = 0; i < 6; i++){
+                this->alu_control[i] = func[i];
             }
             this->reg_wrt = true;
         }
@@ -107,7 +109,7 @@ void Control::set_signals(bool opcode[6], bool func[6]){
         else if(opcode[2]){
             //alu imm
             //using alu
-            this->alu_control[3] = false;
+            this->alu_control[5] = false;
             this->alu_src = true;
             this->reg_dst = true;
             this->reg_wrt = true;
@@ -119,33 +121,31 @@ void Control::set_signals(bool opcode[6], bool func[6]){
             //using alu
             //branch imm
             this->branch = true;
-            this->alu_control[3] = false;
+            this->alu_control[5] = false;
             
         }
     }
 
-    for (int i = 0; i < 4; i++){
+    for (int i = 0; i < 6; i++){
        this->signals[i] = this->alu_control[i];
-       this->signals[i+4] = opcode[i];
+       this->signals[i+6] = opcode[i];
     }
 
-    this->signals[8] = opcode[4];
-    this->signals[9] = opcode[5];
-    this->signals[10] = this->alu_src;
-    this->signals[11] = this->reg_dst;
-    this->signals[12] = this->branch;
-    this->signals[13] = this->mem_read;
-    this->signals[14] = this->mem_wrt;
-    this->signals[15] = this->mem_to_reg;
-    this->signals[16] = this->reg_wrt;
-    this->signals[17] = this->jump;
-    this->signals[18] = this->set_reg31;
+    this->signals[12] = this->alu_src;
+    this->signals[13] = this->reg_dst;
+    this->signals[14] = this->branch;
+    this->signals[15] = this->mem_read;
+    this->signals[16] = this->mem_wrt;
+    this->signals[17] = this->mem_to_reg;
+    this->signals[18] = this->reg_wrt;
+    this->signals[19] = this->jump;
+    this->signals[20] = this->set_reg31;
     
 }
 
 void Control::reset_signals(){
 
-    for(int i = 0; i < 4; i++){
+    for(int i = 0; i < 6; i++){
         this->alu_control[i] = true;
     }
 
@@ -163,7 +163,7 @@ void Control::reset_signals(){
 void Control::print(){
     std::cout << "  control: { ";
 
-    for (int i = 0; i < 19; i++){
+    for (int i = 0; i < 21; i++){
         std::cout << int(this->signals[i]);
     }
 
@@ -174,28 +174,26 @@ void Control::print_desc(){
     std::cout << "  control: { " << std::endl;
 
     std::cout << "   alu_ctrl: {";
-    for (int i = 0; i < 4; i++){
+    for (int i = 0; i < 6; i++){
         std::cout << int(this->signals[i]);
     }
     std::cout << "}"<< std::endl;
 
     std::cout << "    op_code: {";
-    for (int i = 0; i < 4; i++){
-        std::cout << int(this->signals[i + 4]);
+    for (int i = 0; i < 6; i++){
+        std::cout << int(this->signals[i + 6]);
     }
     std::cout << "}"<< std::endl;
 
-    std::cout << "     op_[8]:  "<< this->signals[8] << std::endl;
-    std::cout << "     op_[9]:  "<< this->signals[9] << std::endl;
-    std::cout << "    alu_src:  "<< this->signals[10] << std::endl;
-    std::cout << "    reg_dst:  "<< this->signals[11] << std::endl;
-    std::cout << "     branch:  "<< this->signals[12] << std::endl;
-    std::cout << "   mem_read:  "<< this->signals[13] << std::endl;
-    std::cout << "    mem_wrt:  "<< this->signals[14] << std::endl;
-    std::cout << "  memto_reg:  "<< this->signals[15] << std::endl;
-    std::cout << "    reg_wrt:  "<< this->signals[16] << std::endl;
-    std::cout << "       jump:  "<< this->signals[17] << std::endl;
-    std::cout << "  set_reg31:  "<< this->signals[18] << std::endl;
+    std::cout << "    alu_src:  "<< this->signals[12] << std::endl;
+    std::cout << "    reg_dst:  "<< this->signals[13] << std::endl;
+    std::cout << "     branch:  "<< this->signals[14] << std::endl;
+    std::cout << "   mem_read:  "<< this->signals[15] << std::endl;
+    std::cout << "    mem_wrt:  "<< this->signals[16] << std::endl;
+    std::cout << "  memto_reg:  "<< this->signals[17] << std::endl;
+    std::cout << "    reg_wrt:  "<< this->signals[18] << std::endl;
+    std::cout << "       jump:  "<< this->signals[19] << std::endl;
+    std::cout << "  set_reg31:  "<< this->signals[20] << std::endl;
 
     std::cout << "  }"<< std::endl;
 }
