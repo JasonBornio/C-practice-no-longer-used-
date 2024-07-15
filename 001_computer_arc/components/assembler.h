@@ -327,7 +327,7 @@ void Assembler::load_file(string file_name, bool pause_bool){
                         rt = value;
                         break;
                     case 4:
-                        if (func > 7) rd = value;
+                        if (func > 3) rd = value;
                         else shamt = value;
                         break;
                     default:
