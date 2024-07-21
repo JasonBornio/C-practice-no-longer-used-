@@ -321,10 +321,12 @@ void Assembler::load_file(string file_name, bool pause_bool){
                         func = inst[2];
                         break;
                     case 2:
-                        rs = value;
+                        if (func > 3) rs = value;
+                        else rt = value;
                         break;
                     case 3:
-                        rt = value;
+                        if (func > 3) rt = value;
+                        else rd = value;
                         break;
                     case 4:
                         if (func > 3) rd = value;
@@ -428,7 +430,6 @@ void Assembler::load_file(string file_name, bool pause_bool){
 void Assembler::run(int num, bool pause_bool){
     if (abort) return;
     cpu.execute_instructions(num);
-    std::cout<<"hi"<<endl;
     if (pause_bool) pause();
 }
 
