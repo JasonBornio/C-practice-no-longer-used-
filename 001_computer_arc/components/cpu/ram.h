@@ -1,6 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include "adder.h"
+#include "cpu/signextend.h"
 
 class Random_Access_Memory {
     public:
@@ -17,6 +18,7 @@ class Random_Access_Memory {
         void print_data();
         void print_instructions();
         void print_stack();
+        Sign_Extend se;
 
     private:
 
@@ -65,15 +67,15 @@ void Random_Access_Memory::read_byte(int address, bool arr[8]){
 
 void Random_Access_Memory::write_half(int address, bool data[16]){
     for(int i = 0; i < 8; i ++){
-        memory[address][i+1] = data[i];
+        memory[address+1][i] = data[i];
         memory[address][i] = data[i+8];
     }
 }
 
 void Random_Access_Memory::read_half(int address, bool arr[16]){
     for(int i = 0; i < 8; i ++){
-        arr[i] = memory[address+1][i];
-        arr[i+8] = memory[address][i];
+        arr[i] = memory[address + 1][i];
+        arr[i + 8] = memory[address][i];
     }
 }
 
@@ -101,76 +103,66 @@ void Random_Access_Memory::data_clk_step(bool _address[32], bool input_data[32],
     address = bin_to_int(_address, 32);
     int ctrl = bin_to_int(control, 3);
 
-    //std::cout<<"ADRESS"<< address<< std::endl;
-
     if(mem_write){
         switch(ctrl){
             case 0:
-                bool data_in[32];
-                if (input_data[24]){
-                    for(int i = 0; i <24; i++){
-                        data_in[i] = true;     
-                    }
-                }else{
-                    for(int i = 0; i <24; i++){
-                        data_in[i] = false;     
-                    }
-                }
-                for(int i = 0; i < 8; i++){
-                    data_in[i+ 24] = input_data[i+24];     
-                }
-                write_word(address, input_data);
-                break;
-            case 1:
-                bool data_in1[32];
-                if (input_data[16]){
-                    for(int i = 0; i <16; i++){
-                        input_data[i] = true;     
-                    }
-                }else{
-                    for(int i = 0; i <16; i++){
-                        input_data[i] = false;     
-                    }
-                }
-                for(int i = 0; i < 8; i++){
-                    data_in1[i+ 16] = input_data[i+16];     
-                }
-                write_word(address, data_in1);
-                break;
-            case 3:
-                write_word(address, input_data);
-                break;
-            case 4:
+                //std::cout<<"byte in: "<<address<<std::endl;
+                //print_bin(input_data, 32);
                 bool byte_in[8];
                 for (int i = 0; i < 8; i++) {
-                    byte_in[i] = input_data[i+16];
+                    byte_in[i] = input_data[i+24];
                 }
                 write_byte(address, byte_in);
+                //std::cout<<"byte out";
                 break;
-            case 5:
+            case 1:
                 bool half_in[16];
                 for (int i = 0; i < 16; i++) {
                     half_in[i] = input_data[i+16];
                 }
                 write_half(address, half_in);
                 break;
+            case 3:
+                write_word(address, input_data);
+                break;
             default:
                 write_word(address, input_data);
                 break;
         }
     }
-
     if(mem_read){
+        bool byte_out[8];
+        bool half_out[16];
         switch(ctrl){
             case 0:
-                read_byte(address, data_out);
+                read_byte(address, byte_out);
+                se.extend_byte(byte_out);
+                se.get_output(data_out);
                 break;
             case 1:
-                read_half(address, data_out);
+                read_half(address, half_out);
+                se.extend_half(half_out);
+                se.get_output(data_out);
                 break;
             case 3:
                 read_word(address, data_out);
                 break;
+            case 4:
+                read_byte(address, byte_out);
+                for (int i = 0; i < 24; i++){
+                    data_out[i] = false;
+                    if(i < 8){
+                        data_out[i + 24] = byte_out[i];
+                    }
+                }
+                break;//
+            case 5:
+                read_half(address, half_out);
+                for (int i = 0; i < 16; i++){
+                    data_out[i] = false;
+                    data_out[i + 16] = half_out[i]; 
+                }
+                break;//
             default:
                 read_word(address, data_out);
                 break;
