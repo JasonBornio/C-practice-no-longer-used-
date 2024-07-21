@@ -333,12 +333,12 @@ imm:
 18.XORI14| Op: 001110 rt//
 Shifter:______________________________
 rtype:oo00
-19.SLL   | Op: 000000 | func: 000|000 rd
-20.SLLV  | Op: 000000 | func: 000|100 rd
-21.SRA   | Op: 000000 | func: 000|011 rd
-22.SRAV  | Op: 000000 | func: 000|111 rd
-23.SRL   | Op: 000000 | func: 000|010 rd
-24.SRLV  | Op: 000000 | func: 000|110 rd
+19.SLL   | Op: 000000 | func: 000|000 rd//
+20.SLLV  | Op: 000000 | func: 000|100 rd//
+21.SRA   | Op: 000000 | func: 000|011 rd//
+22.SRAV  | Op: 000000 | func: 000|111 rd//
+23.SRL   | Op: 000000 | func: 000|010 rd/
+24.SRLV  | Op: 000000 | func: 000|110 rd/
 Branch:______________________________
 imm:
 25.BEQ  4| Op: 000100 pc 3-5 zeros//
@@ -374,4 +374,12 @@ imm:
 46.SB    | Op: 101000//
 47.SH    | Op: 101001//
 48.SW    | Op: 101011//
+*/
+
+/*TO DO:
+1. Add pseudo instructions
+2. Increase Ram size
+3. Add "External" Storage
+4. Add Display capabilities
+5. Run a program.
 */
