@@ -4,7 +4,7 @@ class Control {
     public:
         Control();
 
-        void get_output(bool array[21]);
+        void get_output(bool array[22]);
         void set_signals(bool opcode[6], bool func[6]);
 
         void print();
@@ -21,11 +21,11 @@ class Control {
         bool mem_wrt;
         bool mem_to_reg;
         bool branch;
-        bool set_reg31;
+        bool link;
 
-        bool jump;
+        bool jump[2];
 
-        bool signals[19] = {};
+        bool signals[22] = {};
         void reset_signals();
 
 };
@@ -38,13 +38,14 @@ Control::Control(){
     this->mem_wrt = false;
     this->mem_to_reg = false;
     this->branch = false;
-    this->set_reg31 = false;
+    this->link = false;
 
-    this->jump = false;
+    this->jump[0] = false;
+    this->jump[1] = false;
 }
 
-void Control::get_output(bool array[21]){
-    for(int i = 0; i < 21; i++){
+void Control::get_output(bool array[22]){
+    for(int i = 0; i < 22; i++){
         array[i] = this->signals[i];
     }
 }
@@ -72,8 +73,9 @@ void Control::set_signals(bool opcode[6], bool func[6]){
         else if(func[2]){
             //jump reg
             this->reg_wrt = true;
-            this->jump = true;
-            if(func[5]) {this->reg_wrt = true; this->set_reg31 = true;}
+            this->jump[0] = true;
+            this->jump[1] = true;
+            if(func[5]) this->link = true;
         }
         else if(func[2] && func[3]){
             //other
@@ -115,14 +117,15 @@ void Control::set_signals(bool opcode[6], bool func[6]){
             this->reg_wrt = true;
         }
         else if(!opcode[3] && opcode[4]){
-            this->jump = true;
+            //jump
+            if (opcode[5]) {this->jump[1] = true; this->link = true; this->reg_wrt = true;}
+            else this->jump[0] = true;
         }
         else{
             //using alu
             //branch imm
             this->branch = true;
             this->alu_control[5] = false;
-            
         }
     }
 
@@ -138,8 +141,9 @@ void Control::set_signals(bool opcode[6], bool func[6]){
     this->signals[16] = this->mem_wrt;
     this->signals[17] = this->mem_to_reg;
     this->signals[18] = this->reg_wrt;
-    this->signals[19] = this->jump;
-    this->signals[20] = this->set_reg31;
+    this->signals[19] = this->jump[0];
+    this->signals[20] = this->jump[1];
+    this->signals[21] = this->link;
     
 }
 
@@ -157,13 +161,16 @@ void Control::reset_signals(){
     this->mem_to_reg = false;
     this->branch = false;
 
-    this->jump = false;
+    this->jump[0] = false;
+    this->jump[1] = false;
+
+    this->link = false;
 }
 
 void Control::print(){
     std::cout << "  control: { ";
 
-    for (int i = 0; i < 21; i++){
+    for (int i = 0; i < 22; i++){
         std::cout << int(this->signals[i]);
     }
 
@@ -192,8 +199,9 @@ void Control::print_desc(){
     std::cout << "    mem_wrt:  "<< this->signals[16] << std::endl;
     std::cout << "  memto_reg:  "<< this->signals[17] << std::endl;
     std::cout << "    reg_wrt:  "<< this->signals[18] << std::endl;
-    std::cout << "       jump:  "<< this->signals[19] << std::endl;
-    std::cout << "  set_reg31:  "<< this->signals[20] << std::endl;
+    std::cout << "    jump[0]:  "<< this->signals[19] << std::endl;
+    std::cout << "    jump[1]:  "<< this->signals[20] << std::endl;
+    std::cout << "       link:  "<< this->signals[21] << std::endl;
 
     std::cout << "  }"<< std::endl;
 }
