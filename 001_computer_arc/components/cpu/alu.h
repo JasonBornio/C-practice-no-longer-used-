@@ -20,7 +20,6 @@ class Arithmetic_Logic_Unit {
         bool shamt[32];
         bool reg_wrt;
         bool rd[5];
-
 };
 
 Arithmetic_Logic_Unit::Arithmetic_Logic_Unit(){
@@ -96,7 +95,7 @@ void Arithmetic_Logic_Unit::clock_step(Reg_32 A, Reg_32 B, bool control[6], bool
                 else{
                     //beq
                     if(A.get_data() == B.get_data()){
-                        std::cout<<"A: " << A.get_data() << ", B: " << B.get_data()<< std::endl;
+                        //std::cout<<"A: " << A.get_data() << ", B: " << B.get_data()<< std::endl;
                         std::cout<<"::::::::::BEQ"<<std::endl;
                         _zero = true;
                     }
@@ -332,12 +331,12 @@ void Arithmetic_Logic_Unit::clock_step(Reg_32 A, Reg_32 B, bool control[6], bool
             case 8: 
                 //jr
                 std::cout<<"::::::::::JR"<<std::endl;
-                output = zero_reg;
+                output = A;
                 break;
             case 9: 
                 //jalr
                 std::cout<<"::::::::::JALR"<<std::endl;
-                output = B;
+                output = A;
                 break;
             case 10: 
                 //slt
