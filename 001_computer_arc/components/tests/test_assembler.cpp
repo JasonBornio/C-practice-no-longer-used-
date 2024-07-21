@@ -9,10 +9,10 @@ int main(){
     Cpu cpu;
     Assembler assembler(cpu);
 
-    assembler.load_file("assembly.txt", false);
+    assembler.load_file("intruction_tests.txt", false);
     assembler.show_instructions(false);
     
-    assembler.run(100, false);
+    assembler.run(1000, false);
     assembler.show_registers(true);
     assembler.show_ram_data(false);
 
