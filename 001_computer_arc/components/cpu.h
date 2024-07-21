@@ -1,5 +1,4 @@
 #include "cpu/alu.h"
-#include "cpu/signextend.h"
 
 class Cpu {
     public:
@@ -19,13 +18,17 @@ class Cpu {
         void print_control();
 
     private:
+
+        //registers
         Reg_32 alu_a_reg;
         Reg_32 alu_b_reg;
-        Reg_32 alu_out_reg;
+        Program_Counter pc;
+
 
         //msb of last 3 regs are control signals
         //first 5 lsb of last 3 regs are rs rt rd.
-        Reg_32 if_id_reg[2] = {};
+        //pipeline registers
+        Reg_32 if_id_reg[3] = {};
         Reg_32 id_ex_reg[5] = {};
         Reg_32 ex_mem_reg[4] = {};
         Reg_32 mem_wb_reg[3] = {};
@@ -33,24 +36,21 @@ class Cpu {
         
         Random_Access_Memory ram;
         Register_File registers;
-        Program_Counter pc;
         Arithmetic_Logic_Unit alu;
         Control control;
         Multiplexer_2 multiplexers[5];
         Sign_Extend sign_extend;
         Adder_32 adder;
-        Shifter shift_left;
+        Shifter shifters[2];
 
         bool pc_src;
-
-        bool buffer[32];
+        bool buffers[2][32];
 
         void instruction_fetch();
         void instruction_decode();
         void execute();
         void memory_acess();
         void write_back();
-
 };
 
 Cpu::Cpu(){
@@ -61,7 +61,6 @@ Cpu::Cpu(){
 
     alu_a_reg.set_name("$alu_a");
     alu_b_reg.set_name("$alu_b");
-    alu_out_reg.set_name("$alu_out");
     
     if_id_reg[0].set_name("$p_pc");
     if_id_reg[1].set_name("$p_instr");
@@ -99,8 +98,9 @@ void Cpu::execute_instructions(int num){
     while (pc.get_pc() <  ram.get_top_inst_pointer() + 4 && count < num){
         clock_step();
         //print_pipeline_registers();
-        //pc.print();
+        //print_registers();
         count += 1;
+        //if (count < 32) print_pipeline_registers();
     }
 }
 
@@ -112,152 +112,163 @@ void Cpu::execute_instructions(){
 
 void Cpu::instruction_fetch(){
 
-    pc.get_pc(buffer);
-
     bool arr_1[4][32];
     bool arr_2[4][32];
+    bool ctrl[2] = { false, pc_src };
+    
+    //pc
+    pc.get_pc(buffers[0]);
+    
+    //fill old_pc register
+    if_id_reg[2].fill_arr_lower(buffers[0], 32);
 
+    //branch mux0 set inputs (pc, branch)
     for(int i = 0; i < 32; i++){
-        arr_1[0][i] = buffer[i];
+        arr_1[0][i] = buffers[0][i];
         arr_1[1][i] = ex_mem_reg[0].get_data(i);
     }
 
-    bool ctrl[2] = { false, pc_src };
-
+    //get mux0 output
     multiplexers[0].clock_step(arr_1);
-    multiplexers[0].get_output(ctrl, buffer);
+    multiplexers[0].get_output(ctrl, buffers[0]);
 
-    bool arr[32];
-    id_ex_reg[3].get_data_arr(arr);
+    //target 26-bits
+    id_ex_reg[3].get_data_arr(buffers[1]);
 
-    //shifter
-    shift_left.shift(arr);
-    shift_left.get_output(arr);
-    id_ex_reg[3].fill_arr_lower(arr, 32);
+    //shifter0 shift target left by 2
+    shifters[0].shift(buffers[1]);
+    shifters[0].get_output(buffers[1]);
 
+    //jump mux1 set inputs (mux0, target, target, rs)
     for (int i = 0; i < 32; i ++){
-        arr_2[0][i] = buffer[i];
-        arr_2[1][i] = id_ex_reg[3].get_data(i);
+        arr_2[0][i] = buffers[0][i];
+        arr_2[1][i] = buffers[1][i];
+        arr_2[2][i] = buffers[1][i]; //need to do
+        arr_2[3][i] = id_ex_reg[1].get_data(i);
     }
 
-    ctrl[1] = ex_mem_reg[3].get_data(5);
-    
+    //jump ctrl____________________________________________DO_
+    ctrl[0] = ex_mem_reg[3].get_data(9);
+    ctrl[1] = ex_mem_reg[3].get_data(10);
+
+    //get mux1 output
     multiplexers[1].clock_step(arr_2);
-    multiplexers[1].get_output(ctrl, buffer);
+    multiplexers[1].get_output(ctrl, buffers[0]);
 
-    //shift it
+    //set pc
+    pc.jump(buffers[0]);
 
-    pc.jump(buffer);
-
-    ram.inst_clk_step(buffer);
-    ram.get_data_out(buffer);
-    if_id_reg[1].fill_arr_lower(buffer, 32);
+    //get intructin at pc
+    ram.inst_clk_step(buffers[0]);
     
+    //fill instruction register
+    ram.get_data_out(buffers[0]);
+    if_id_reg[1].fill_arr_lower(buffers[0], 32);
+    
+    //pc += 4
     pc.increment();
-    pc.get_pc(buffer);
-    if_id_reg[0].fill_arr_lower(buffer, 32);
+
+    //fill pc register
+    pc.get_pc(buffers[0]);
+    if_id_reg[0].fill_arr_lower(buffers[0], 32);
+    
 }
 
 void Cpu::instruction_decode(){
 
-    //pass pc
+    //fill pc register
     id_ex_reg[0].copy(if_id_reg[0]);
         
     //decode inst
     bool opcode[6];
     bool func[6];
+    bool op_current = false;
     bool jump = true;
+    bool r_type = true;
 
+    //get instruction
+    if_id_reg[1].get_data_arr(buffers[0]);
+
+    //get opcode
     for (int i = 0; i < 6; i++){
-        opcode[i] = if_id_reg[1].get_data(i);
-        func[i] = if_id_reg[1].get_data(i+26);
-        if(i < 4 && opcode[i]){
-            jump = false;
+        op_current = buffers[0][i];
+        func[i] = buffers[0][i+26];
+        
+        opcode[i] = op_current;
+
+        if(op_current){
+            //check for r_type or jump
+            r_type = false;
+            if(i < 4) jump = false;
         }
     }
 
-    //get inst
-    if_id_reg[1].get_data_arr(buffer);
-    int opcode_int = bin_to_int(opcode, 6);
-
+    //decode the instruction
     if(jump && opcode[4]){
-        //std::cout<<"JUMP"<<std::endl;
-        //jump
-        jump_inst instruction = create_jump_inst(buffer);
+        //jump target intruction:
+        //std::cout<<"Jump"<<std::endl;
+        jump_inst instruction = create_jump_inst(buffers[0]);
         id_ex_reg[3].fill_arr_lower(instruction.target, 26);
     }
-    else if (opcode_int){
-        //imm
-        //std::cout<<"IMMM"<<std::endl;
-        immediate_inst instruction = create_immediate_inst(buffer);
-
-        //mem_wb_reg[1].get_data_arr(buffer);
-
-        registers.clk_step(
-            instruction.int_rs,
-            instruction.int_rt,
-            31,
-            buffer,
-            false
-        );
-
-        //get registers
-        registers.get_rs(buffer);
-        id_ex_reg[1].fill_arr_lower(buffer, 32);
-        registers.get_rt(buffer);
-        id_ex_reg[2].fill_arr_lower(buffer, 32);
-
-        sign_extend.extend_half(instruction.imm);
-        sign_extend.get_output(buffer);
-        
-        id_ex_reg[3].fill_arr_lower(buffer, 32);
-        id_ex_reg[4].fill_arr_lower(instruction.rt, 5);
-
-    }
-    else{
+    else if (r_type){
         //rtype:
-        r_type_inst instruction = create_r_type_inst(buffer);
-
-        //mem_wb_reg[1].get_data_arr(buffer);
+        //std::cout<<"R"<<std::endl;
+        r_type_inst instruction = create_r_type_inst(buffers[0]);
 
         registers.clk_step(
             instruction.int_rs,
             instruction.int_rt,
             31,
-            buffer,
+            buffers[0],
             false
         );
 
-        registers.get_rt(buffer);
-        id_ex_reg[2].fill_arr_lower(buffer, 32);
         //get registers
-        registers.get_rs(buffer);
-        id_ex_reg[1].fill_arr_lower(buffer, 32);
+        registers.get_rs(buffers[0]);
+        registers.get_rt(buffers[1]);
+        id_ex_reg[1].fill_arr_lower(buffers[0], 32);
+        id_ex_reg[2].fill_arr_lower(buffers[1], 32);
 
-        if(!func[0] && func[2]){
-            std::cout<<"JUMP"<<std::endl;
-            //jump
-            id_ex_reg[3].fill_arr_lower(buffer, 32);
-            pc.get_pc(buffer);
-            id_ex_reg[2].fill_arr_lower(buffer, 32);
-        }
-        else{
-            id_ex_reg[3].fill_arr_lower(instruction.shamt, 5);
-        }
-
+        id_ex_reg[3].fill_arr_upper(instruction.shamt, 5);
+        
         id_ex_reg[4].fill_arr_lower(instruction.rt, 5);
         id_ex_reg[4].fill_arr_lower(instruction.rd, 5, 5);
+    }
+    else{
+        //imm
+        //std::cout<<"IMM"<<std::endl;
+        immediate_inst instruction = create_immediate_inst(buffers[0]);
 
+        registers.clk_step(
+            instruction.int_rs,
+            instruction.int_rt,
+            31,
+            buffers[0],
+            false
+        );
+
+        //get registers
+        registers.get_rs(buffers[0]);
+        registers.get_rt(buffers[1]);
+        id_ex_reg[1].fill_arr_lower(buffers[0], 32);
+        id_ex_reg[2].fill_arr_lower(buffers[1], 32);
+
+        sign_extend.extend_half(instruction.imm);
+        sign_extend.get_output(buffers[0]);
+        
+        id_ex_reg[3].fill_arr_lower(buffers[0], 32);
+        id_ex_reg[4].fill_arr_lower(instruction.rt, 5);
     }
 
-    //control signals
-    bool signals[19];
+    //set control signals
+    bool signals[22];
     control.set_signals(opcode, func);
     control.get_output(signals);
-    id_ex_reg[4].fill_arr_upper(signals, 19);
+    id_ex_reg[4].fill_arr_upper(signals, 22);
 
     // std::cout<<"opfunc:: ";
-    // print_bin(op_func, 12);
+    // print_bin(opcode, 6);
+    // print_bin(func, 6);
     // std::cout<<"signal:: ";
     // print_bin(signals, 19);
 
@@ -265,35 +276,49 @@ void Cpu::instruction_decode(){
 
 void Cpu::execute(){
 
-    //update pc
-    //NEED SHIFTER HERE !!!
-    ex_mem_reg[0] = adder.add_int(id_ex_reg[0], id_ex_reg[3].get_data() * 4);
-    ex_mem_reg[0].set_name("$p_pc");
-
-    //alu inputs
+    //mux inputs
     bool arr_1[4][32] = {};
     bool arr_2[4][32] = {};
+    
+    //alu inputs
+    bool alu_ctrl[6];
+    bool alu_op[6];
+    bool alu_shamt[5];
 
+    //get and shift offset
+    id_ex_reg[3].get_data_arr(buffers[0]);
+
+    //shifter1
+    shifters[1].shift(buffers[0]);
+    shifters[1].get_output(buffers[0]);
+
+    //add offset to pc and fill pc register
+    ex_mem_reg[0] = adder.add_int(id_ex_reg[0], bin_to_int(buffers[0], 32));
+    ex_mem_reg[0].set_name("$p_pc");
+
+    //rt register
     id_ex_reg[2].get_data_arr(arr_1[0]);
+    //imm register
     id_ex_reg[3].get_data_arr(arr_1[1]);
+
+    //mux2 (rt, imm)
     multiplexers[2].clock_step(arr_1);
 
     //alu_src
-    bool ctrl[2] = {false, id_ex_reg[4].get_data(10)};
-    multiplexers[2].get_output(ctrl, buffer);
+    bool ctrl[2] = {false, id_ex_reg[4].get_data(12)};
+    multiplexers[2].get_output(ctrl, buffers[0]);
 
-    alu_b_reg.fill_arr_lower(buffer, 32);
-    id_ex_reg[1].get_data_arr(buffer);
-    alu_a_reg.fill_arr_lower(buffer, 32);
+    //fill alu A and B registers
+    id_ex_reg[1].get_data_arr(buffers[1]);
+    alu_a_reg.fill_arr_lower(buffers[1], 32);
+    alu_b_reg.fill_arr_lower(buffers[0], 32);
 
-    bool alu_ctrl[4];
-    bool alu_op[6];
-
+    //get alu input signals
     for (int i = 0; i < 6; i++){
-        if(i < 4){
-            alu_ctrl[i] = id_ex_reg[4].get_data(i);
-        }
-        alu_op[i] = id_ex_reg[4].get_data(i+4);
+        alu_ctrl[i] = id_ex_reg[4].get_data(i);
+        alu_op[i] = id_ex_reg[4].get_data(i+6);
+        if(i < 5)
+            alu_shamt[i] = id_ex_reg[3].get_data(i);
     }
 
     // std::cout<<"alu_ctrl:: ";
@@ -301,17 +326,16 @@ void Cpu::execute(){
     // std::cout<<"alu_op :: ";
     // print_bin(alu_op, 6);
 
-    //alu func
-    alu.clock_step(alu_a_reg, alu_b_reg, alu_ctrl, alu_op);
-    alu_out_reg = alu.get_output();
-    alu_out_reg.set_name("$alu_out");
-    ex_mem_reg[1].copy(alu_out_reg);
+    //compute alu function 
+    alu.clock_step(alu_a_reg, alu_b_reg, alu_ctrl, alu_op, alu_shamt);
 
-    //data reg
+    //fill alu_out register
+    ex_mem_reg[1].copy(alu.get_output());
+
+    //fill data register
     ex_mem_reg[2].copy(id_ex_reg[2]);
 
-    //write reg
-    
+    //mux3 inputs (rd, rt)
     for (int i = 0; i < 5; i++){
         arr_2[0][27+i] = id_ex_reg[4].get_data(22+i);
         arr_2[1][27+i] = id_ex_reg[4].get_data(27+i);
@@ -319,94 +343,113 @@ void Cpu::execute(){
 
     //reg_dst
     multiplexers[3].clock_step(arr_2);
-    ctrl[1] = id_ex_reg[4].get_data(11);
+    ctrl[1] = id_ex_reg[4].get_data(13);
 
-    multiplexers[3].get_output(ctrl, buffer);
-    ex_mem_reg[3].fill_arr_lower(buffer, 32);
+    //fill lower reg_dst register
+    multiplexers[3].get_output(ctrl, buffers[0]);
+    ex_mem_reg[3].fill_arr_lower(buffers[0], 32, 5);
 
     //control signals
-    bool signals[11] = {
-        id_ex_reg[4].get_data(12),
-        id_ex_reg[4].get_data(13),
-        id_ex_reg[4].get_data(14),
-        id_ex_reg[4].get_data(15),
-        id_ex_reg[4].get_data(16),
-        id_ex_reg[4].get_data(17),
-        alu.zero(),
-        id_ex_reg[4].get_data(4),
-        id_ex_reg[4].get_data(5),
-        id_ex_reg[4].get_data(6),
-        id_ex_reg[4].get_data(7)
+    bool signals[13] = {
+        id_ex_reg[4].get_data(8),  //op[2]
+        id_ex_reg[4].get_data(9),  //op[3]
+        id_ex_reg[4].get_data(10), //op[4]
+        id_ex_reg[4].get_data(11), //op[5]
+        id_ex_reg[4].get_data(14), //branch
+        id_ex_reg[4].get_data(15), //mem_read
+        id_ex_reg[4].get_data(16), //mem_write
+        id_ex_reg[4].get_data(17), //mem_to_reg
+        id_ex_reg[4].get_data(18), //reg_wrt
+        id_ex_reg[4].get_data(19), //jump[0]
+        id_ex_reg[4].get_data(20), //jump[1]
+        id_ex_reg[4].get_data(21), //link
+        alu.zero()
+
     };
-    ex_mem_reg[3].fill_arr_upper(signals, 11);
+
+    //fill upper reg_dst register
+    ex_mem_reg[3].fill_arr_upper(signals, 13);
 }
  
 void Cpu::memory_acess(){
 
-    //memory access
-    bool data_reg[32];
-    bool ram_ctrl[4];
-    ex_mem_reg[1].get_data_arr(buffer);
-    ex_mem_reg[2].get_data_arr(data_reg);
+    bool ram_ctrl[3];
+    ex_mem_reg[1].get_data_arr(buffers[0]);
+    ex_mem_reg[2].get_data_arr(buffers[1]);
 
-    for(int i = 0; i<4; i++){
-        ram_ctrl[i] = ex_mem_reg[3].get_data(7+i);
+    //and gate
+    pc_src = (ex_mem_reg[3].get_data(4)) && ex_mem_reg[3].get_data(12);
+
+    //get ram control (op[2:5])
+    for(int i = 0; i<3; i++){
+        ram_ctrl[i] = ex_mem_reg[3].get_data(i + 1);
     }
 
+    //memory access
     ram.data_clk_step(
-        buffer, 
-        data_reg, 
-        ex_mem_reg[3].get_data(2),
-        ex_mem_reg[3].get_data(1),
+        buffers[0],
+        buffers[1],
+        ex_mem_reg[3].get_data(6),
+        ex_mem_reg[3].get_data(5),
         ram_ctrl
     );
     
-    ram.get_data_out(buffer);
+    ram.get_data_out(buffers[0]);
 
-    //pipeline register
-    mem_wb_reg[0].fill_arr_lower(buffer, 32);
+    //fill memory out register
+    mem_wb_reg[0].fill_arr_lower(buffers[0], 32);
+
+    //fill alu out register
     mem_wb_reg[1].copy(ex_mem_reg[1]);
-    mem_wb_reg[2].copy(ex_mem_reg[3]);
+
+    //fill lower reg_dst register 
+    ex_mem_reg[3].get_data_arr(buffers[1]);
+    mem_wb_reg[2].fill_arr_lower(buffers[1], 32);
 
     //control signals
-    bool signals[2] = {
-        ex_mem_reg[3].get_data(3),
-        ex_mem_reg[3].get_data(4)
+    bool signals[3] = {
+        ex_mem_reg[3].get_data(7), //mem_to_reg
+        ex_mem_reg[3].get_data(8), //reg_wrt
+        ex_mem_reg[3].get_data(11) //link
     };
-    mem_wb_reg[2].fill_arr_upper(signals, 2);
 
-    //and gate
-    pc_src = (ex_mem_reg[3].get_data(0)) && ex_mem_reg[3].get_data(6);
+    //fill upper reg_dst register
+    mem_wb_reg[2].fill_arr_upper(signals, 3);
 
 }
 
 void Cpu::write_back(){
     bool arr[4][32];
     bool write_reg_bin[5];
-    
+    int write_reg = 31;
+
+    //mux4 inputs (mem_out, alu_out, pc, pc)
     mem_wb_reg[1].get_data_arr(arr[0]);
     mem_wb_reg[0].get_data_arr(arr[1]);
+    if_id_reg[2].get_data_arr(arr[2]); //___DO_ add extra old_pc pipeline regs.
+    if_id_reg[2].get_data_arr(arr[3]);
 
-    for (int i = 0; i < 5; i++){
-        write_reg_bin[i] = mem_wb_reg[2].get_data(27 + i); 
-    } 
-
+    //mux4
     multiplexers[4].clock_step(arr);
 
-    bool ctrl[2] = {false, mem_wb_reg[2].get_data(0)};
-    multiplexers[4].get_output(ctrl, buffer);
+    //mem_to_reg/link
+    bool ctrl[2] = { mem_wb_reg[2].get_data(2), mem_wb_reg[2].get_data(0) };
+    multiplexers[4].get_output(ctrl, buffers[0]);
 
-    int write_reg = bin_to_int(write_reg_bin, 5);
+    //get destination register
+    if(mem_wb_reg[2].get_data(2) == false){
+        for (int i = 0; i < 5; i++){
+            write_reg_bin[i] = mem_wb_reg[2].get_data(27 + i); 
+        } 
+        write_reg = bin_to_int(write_reg_bin, 5);
+    }
 
-    // print_bin(buffer, 32);
-    // print_bin(write_reg_bin, 5);
-    // std::cout << mem_wb_reg[2].get_data(1)<< ", "<<write_reg<<std::endl;
-
+    //write back to register file
     registers.clk_step(
         0,
         0,
         write_reg,
-        buffer,
+        buffers[0],
         mem_wb_reg[2].get_data(1)
     );
 }
@@ -424,7 +467,7 @@ void Cpu::print_registers(){
 void Cpu::print_pipeline_registers(){
     std::cout <<"________________________________________"<<std::endl;
     std::cout << std::endl << " if_id_regs::"<< std::endl;
-    for (int i = 0; i < 2; i++){
+    for (int i = 0; i < 3; i++){
         if_id_reg[i].print();
     }
 
@@ -434,10 +477,8 @@ void Cpu::print_pipeline_registers(){
     }
 
     std::cout << std::endl << "   alu regs::"<< std::endl;
-
     alu_a_reg.print();
     alu_b_reg.print();
-    alu_out_reg.print();
 
     std::cout << std::endl << "ex_mem_regs::"<< std::endl;
     for (int i = 0; i < 4; i++){
